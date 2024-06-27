@@ -237,3 +237,55 @@ def fun_rule_write(list_str):
     df_fin['white/black'] = df_fin['good'] / df_fin['bad']
     df_fin['bad_rate'] = df_fin['bad'] / df_fin['all']
     return df_fin
+
+
+from collections import defaultdict
+
+
+def transform_list_to_dict(input_list):
+    """
+    输入一个列表，统计每个元素出现的个数，并完成一次和多次的拆分
+    :param input_list:
+    :return:
+    """
+    count_dict = defaultdict(int)
+    for item in input_list:
+        count_dict[item] += 1
+    value_01 = [key for key, value in count_dict.items() if value == 1]
+    value_02 = [key for key, value in count_dict.items() if value > 1]
+    return value_01, value_02
+
+
+def make_rule_yuzhi(input_list):
+    """
+    列表组合，形如：# a = [['age', '<=', 30], ['age', '>', 15], ['heigt', '<', 180], ['heigt', '<', 170]]
+    :param input_list:
+    :return: 保留唯一条件，同大取大，同小取小
+    """
+    input_list01 = [i[0] for i in input_list]
+    unique_cols, duplicate_cols = transform_list_to_dict([i for i in input_list01])
+    result_list = []
+    # 遍历唯一特征
+    for col in unique_cols:
+        result_list.append(next(item for item in input_list if item[0] == col))
+    # 遍历出现多个特征
+    for col in duplicate_cols:
+        sub_list = [i[1] for i in input_list if i[0] == col]
+        # 同一特征对应特征出现的次数对应的逻辑符号
+        unique_subs, duplicate_subs = transform_list_to_dict(sub_list)
+        # 遍历一个？ 感觉无用，能到这块说明出现两次了
+        # for sub in unique_subs:
+        #     result_list.append(next(item for item in input_list if item[0] == col and item[1] == sub))
+        for sub in duplicate_subs:
+            if sub in ['<=', '<']:
+                value_tmp = min([i[2] for i in input_list if i[0] == col and i[1] == sub])
+            elif sub in ['>=', '>']:
+                value_tmp = max([i[2] for i in input_list if i[0] == col and i[1] == sub])
+            result_list.append(
+                next(item for item in input_list if item[0] == col and item[1] == sub and item[2] == value_tmp))
+    return result_list
+
+# a = [['age', '<=', 30], ['age', '>', 15], ['heigt', '<', 180], ['heigt', '<', 170]]
+
+# make_rule_yuzhi(a)
+# [['age', '<=', 30], ['age', '>', 15], ['heigt', '<', 170]]
